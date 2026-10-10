@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 图书馆藏副本表 (bookcopy)：每条记录对应一本实体书，通过 ISBN 关联 book 表 -->
+<mapper namespace="com.library.mapper.BookcopyMapper">
+    <!-- 按条码查单本实体书，借书/还书/定位都需要先拿到副本记录 -->
+    <select id="findByBarCode" resultType="com.library.entity.Bookcopy">
+        SELECT barCode, ISBN, place, status, oldStatus FROM bookcopy WHERE barCode = #{barCode}
+    </select>
+    <!-- 按 ISBN 查所有副本，用于展示某本书的馆藏明细（在架/借出/注销） -->
+    <select id="findByIsbn" resultType="com.library.entity.Bookcopy">
+        SELECT barCode, ISBN, place, status, oldStatus FROM bookcopy WHERE ISBN = #{ISBN}
+    </select>
+    <!-- 新增一本实体副本入库，条码由管理员手动分配或系统生成 -->
+    <insert id="insert">
+        INSERT INTO bookcopy (barCode, ISBN, place, status)
+        VALUES (#{barCode}, #{ISBN}, #{place}, #{status})
+    </insert>
+    <!-- 借出/归还时切换副本状态：1=在馆、0=借出 -->
+    <update id="updateStatus">
+        UPDATE bookcopy SET status = #{status} WHERE barCode = #{barCode}
+    </update>
+    <!-- 馆藏调拨：修改副本的存放位置（楼层/书架） -->
+    <update id="updatePlace">
+        UPDATE bookcopy SET place = #{place} WHERE barCode = #{barCode}
+    </update>
+    <!-- 批量更新同一 ISBN 下所有"在馆"副本的状态，同时把旧状态存入 oldStatus 便于恢复 -->
+    <update id="updateAllByIsbn">
+        UPDATE bookcopy SET status = #{status}, oldStatus = 1
+        WHERE ISBN = #{ISBN} AND status = 1
+    </update>
+    <!-- 注销副本：status 置为 2(注销)，oldStatus 保留注销前的状态以便恢复 -->
+    <update id="discardCopy">
+        UPDATE bookcopy SET oldStatus = #{oldStatus}, status = 2 WHERE barCode = #{barCode}
+    </update>
+    <!-- 仪表盘用：统计有效馆藏副本总数（排除已注销的） -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM bookcopy WHERE status != 2
+    </select>
+    <!-- 按状态统计副本数：status=1 在馆、=0 借出，用于仪表盘各状态分布 -->
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*) FROM bookcopy WHERE status = #{status}
+    </select>
+    <!-- 借书时搜索馆藏副本：bookcopy JOIN book，排除已注销副本和下架图书，关键字模糊匹配条码/ISBN/书名/作者/出版社，可借副本排最前 -->
+    <select id="searchCopiesForBorrow" resultType="com.library.vo.CopySearchResultVO$CopyBorrowVO">
+        SELECT bc.barCode, bc.ISBN, b.bname AS bookName, b.author, b.publisher, bc.place, bc.status,
+               CASE bc.status WHEN 1 THEN '可借' WHEN 0 THEN '借出' WHEN 2 THEN '注销' ELSE '未知' END AS statusText
+        FROM bookcopy bc
+        JOIN book b ON bc.ISBN = b.ISBN
+        WHERE bc.status != 2 AND b.bookStatus = 1
+          AND (
+            bc.barCode LIKE CONCAT('%', #{keyword}, '%')
+            OR b.ISBN LIKE CONCAT('%', #{keyword}, '%')
+            OR b.bname LIKE CONCAT('%', #{keyword}, '%')
+            OR b.author LIKE CONCAT('%', #{keyword}, '%')
+            OR b.publisher LIKE CONCAT('%', #{keyword}, '%')
+          )
+        ORDER BY CASE WHEN bc.status = 1 THEN 0 ELSE 1 END, bc.barCode
+    </select>
+</mapper>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 管理员表 (admin)：存后台管理员账号，adminType 区分超级管理员和普通管理员 -->
+<mapper namespace="com.library.mapper.AdminMapper">
+    <!-- 登录时按用户名查管理员，拿到密码哈希后在 Service 层做校验 -->
+    <select id="findByUsername" resultType="com.library.entity.Admin">
+        SELECT id, username, password, adminType FROM admin WHERE username = #{username}
+    </select>
+</mapper>

@@ -1,0 +1,223 @@
+/* Element Plus 组件主题微调 */
+
+/* 所有按钮统一 #6D7278 */
+.el-button {
+  --el-button-bg-color: var(--color-button);
+  --el-button-border-color: var(--color-button);
+  --el-button-text-color: var(--color-button-text);
+  --el-button-hover-bg-color: var(--color-button-hover);
+  --el-button-hover-border-color: var(--color-button-hover);
+  --el-button-hover-text-color: var(--color-button-text);
+  --el-button-active-bg-color: var(--color-button-active);
+  --el-button-active-border-color: var(--color-button-active);
+  --el-button-active-text-color: var(--color-button-text);
+}
+
+/* 实心按钮显式覆盖 Element Plus 默认色 */
+.el-button:not(.is-link):not(.is-text):not(.is-disabled) {
+  background-color: var(--color-button);
+  border-color: var(--color-button);
+  color: var(--color-button-text);
+}
+
+.el-button:not(.is-link):not(.is-text):not(.is-disabled):hover,
+.el-button:not(.is-link):not(.is-text):not(.is-disabled):focus {
+  background-color: var(--color-button-hover);
+  border-color: var(--color-button-hover);
+  color: var(--color-button-text);
+}
+
+.el-button:not(.is-link):not(.is-text):not(.is-disabled):active {
+  background-color: var(--color-button-active);
+  border-color: var(--color-button-active);
+  color: var(--color-button-text);
+}
+
+.el-button.is-link,
+.el-button.is-text,
+.el-button--primary.is-link,
+.el-button--primary.is-text,
+.el-button--success.is-link,
+.el-button--success.is-text,
+.el-button--warning.is-link,
+.el-button--warning.is-text,
+.el-button--danger.is-link,
+.el-button--danger.is-text,
+.el-button--info.is-link,
+.el-button--info.is-text {
+  --el-button-bg-color: transparent;
+  --el-button-border-color: transparent;
+  --el-button-text-color: #5E7D67;
+  --el-button-hover-bg-color: rgba(94, 125, 103, 0.12);
+  --el-button-hover-border-color: transparent;
+  --el-button-hover-text-color: #8EA295;
+  --el-button-active-bg-color: rgba(94, 125, 103, 0.18);
+  --el-button-active-border-color: transparent;
+  --el-button-active-text-color: #4B6452;
+}
+
+.el-button.is-link,
+.el-button.is-text,
+.el-button--primary.is-link,
+.el-button--primary.is-text {
+  background-color: transparent;
+  border-color: transparent;
+  color: #5E7D67;
+}
+
+.el-button.is-link:hover,
+.el-button.is-link:focus,
+.el-button.is-text:hover,
+.el-button.is-text:focus,
+.el-button--primary.is-link:hover,
+.el-button--primary.is-link:focus,
+.el-button--primary.is-text:hover,
+.el-button--primary.is-text:focus {
+  background-color: rgba(94, 125, 103, 0.12);
+  border-color: transparent;
+  color: #8EA295;
+}
+
+/* 单选按钮组选中态 */
+.el-radio-button {
+  --el-radio-button-checked-bg-color: #5E7D67;
+  --el-radio-button-checked-border-color: #5E7D67;
+  --el-radio-button-checked-text-color: #FFFFFF;
+}
+
+.el-radio-button__original-radio:checked + .el-radio-button__inner,
+.el-radio-button.is-active .el-radio-button__inner {
+  background-color: #5E7D67;
+  border-color: #5E7D67;
+  color: #FFFFFF;
+  box-shadow: -1px 0 0 0 #5E7D67;
+}
+
+.el-radio-button__inner:hover {
+  color: #5E7D67;
+}
+
+/* Element Plus 主色强调（覆盖默认 #409EFF） */
+.el-link.el-link--primary {
+  --el-link-text-color: #5E7D67;
+  --el-link-hover-text-color: #8EA295;
+}
+
+.el-switch.is-checked .el-switch__core {
+  border-color: #5E7D67;
+  background-color: #5E7D67;
+}
+
+.el-select-dropdown__item.is-selected {
+  color: #5E7D67;
+}
+
+.el-select-dropdown__item.is-hovering {
+  background-color: rgba(94, 125, 103, 0.12);
+}
+
+.el-input__wrapper:focus-within,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px #5E7D67 inset;
+}
+
+.el-tabs__item.is-active {
+  color: #5E7D67;
+}
+
+.el-tabs__active-bar {
+  background-color: #5E7D67;
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: #5E7D67;
+  border-color: #5E7D67;
+}
+
+/* 分页：覆盖默认蓝色 */
+.el-pagination {
+  --el-pagination-hover-color: #5E7D67;
+}
+
+.el-pagination.is-background .el-pager li.is-active {
+  background-color: #5E7D67;
+  color: #FFFFFF;
+}
+
+.el-pagination.is-background .el-pager li:hover {
+  color: #5E7D67;
+}
+
+.el-pagination.is-background .btn-next:hover,
+.el-pagination.is-background .btn-prev:hover {
+  color: #5E7D67;
+}
+
+.el-pager li.is-active {
+  color: #5E7D67;
+}
+
+.el-pager li:hover {
+  color: #5E7D67;
+}
+
+.el-card {
+  --el-card-bg-color: var(--color-card-bg);
+  border-color: var(--color-border-light);
+}
+
+.el-dialog {
+  --el-dialog-bg-color: var(--color-card-bg);
+}
+
+.el-tag--danger {
+  --el-tag-bg-color: var(--color-accent-bg);
+  --el-tag-border-color: rgba(65, 75, 78, 0.35);
+  --el-tag-text-color: var(--color-danger);
+}
+
+.el-tag--success {
+  --el-tag-bg-color: var(--color-primary-bg);
+  --el-tag-border-color: rgba(94, 125, 103, 0.35);
+  --el-tag-text-color: var(--color-primary-dark);
+}
+
+.el-tag--warning {
+  --el-tag-bg-color: var(--color-secondary-bg);
+  --el-tag-border-color: rgba(66, 99, 60, 0.4);
+  --el-tag-text-color: var(--color-warning);
+}
+
+.el-tag--primary {
+  --el-tag-bg-color: var(--color-primary-bg);
+  --el-tag-border-color: rgba(94, 125, 103, 0.35);
+  --el-tag-text-color: #5E7D67;
+}
+
+/* 强制覆盖 Element Plus 默认主色 #409EFF */
+.el-button--primary.is-link,
+.el-button--primary.is-text {
+  color: #5E7D67 !important;
+}
+
+.el-pagination.is-background .el-pager li.is-active {
+  background-color: #5E7D67 !important;
+  color: #FFFFFF !important;
+}
+
+.el-radio-button__original-radio:checked + .el-radio-button__inner,
+.el-radio-button.is-active .el-radio-button__inner {
+  background-color: #5E7D67 !important;
+  border-color: #5E7D67 !important;
+  color: #FFFFFF !important;
+  box-shadow: -1px 0 0 0 #5E7D67 !important;
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: #5E7D67 !important;
+  border-color: #5E7D67 !important;
+}
+
+.el-loading-spinner .path {
+  stroke: #5E7D67 !important;
+}

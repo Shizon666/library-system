@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 罚款缴纳记录表 (payrec)：记录学生每次缴纳罚款的金额和时间 -->
+<mapper namespace="com.library.mapper.PayrecMapper">
+    <!-- 新增缴费流水，serNum 自动生成后回写到 borrowrec 的 paySerNum 字段做关联 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="serNum">
+        INSERT INTO payrec (sno, payAmount, payDate)
+        VALUES (#{sno}, #{payAmount}, #{payDate})
+    </insert>
+    <!-- 学生端查自己的缴费历史，按缴费时间倒序展示 -->
+    <select id="findBySno" resultType="com.library.entity.FinePayment">
+        SELECT serNum AS paymentId, sno, payAmount AS paymentAmount, payDate AS paymentTime
+        FROM payrec WHERE sno = #{sno}
+        ORDER BY payDate DESC
+    </select>
+</mapper>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 图书信息表 (book)：存 ISBN、书名、作者等元数据，bookStatus=1 表示上架 -->
+<mapper namespace="com.library.mapper.BookMapper">
+    <!-- 公共列片段：避免每个 SELECT 都手写一遍字段列表，改字段时只改一处 -->
+    <sql id="bookColumns">
+        id, ISBN, bname, author, publisher, pubDate, introduction, clcNum, bookStatus, price
+    </sql>
+
+    <!-- 按 ISBN 精确查一本书，新增/编辑副本时用来校验 ISBN 是否已存在 -->
+    <select id="findByIsbn" resultType="com.library.entity.Book">
+        SELECT <include refid="bookColumns"/>
+        FROM book WHERE ISBN = #{ISBN}
+    </select>
+    <!-- 读者端搜书：关键字模糊匹配书名/作者/ISBN/出版社，只返回已上架图书 -->
+    <select id="search" resultType="com.library.entity.Book">
+        SELECT <include refid="bookColumns"/>
+        FROM book
+        WHERE bookStatus = 1
+          AND (
+            bname LIKE CONCAT('%', #{keyword}, '%')
+            OR author LIKE CONCAT('%', #{keyword}, '%')
+            OR ISBN LIKE CONCAT('%', #{keyword}, '%')
+            OR publisher LIKE CONCAT('%', #{keyword}, '%')
+          )
+        ORDER BY id DESC
+    </select>
+    <!-- 书目管理公共 WHERE 片段：比读者端搜索多匹配了一个中图法分类号(clcNum) -->
+    <sql id="catalogWhere">
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (
+                    bname LIKE CONCAT('%', #{keyword}, '%')
+                    OR author LIKE CONCAT('%', #{keyword}, '%')
+                    OR ISBN LIKE CONCAT('%', #{keyword}, '%')
+                    OR publisher LIKE CONCAT('%', #{keyword}, '%')
+                    OR clcNum LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+        </where>
+    </sql>
+    <!-- 后台分页查询前先拿总数，前端分页组件依赖这个数字算总页数 -->
+    <select id="countCatalog" resultType="long">
+        SELECT COUNT(*) FROM book
+        <include refid="catalogWhere"/>
+    </select>
+    <!-- 后台书目分页列表：用 LIMIT + OFFSET 实现物理分页，keyword 为空时查全部 -->
+    <select id="listCatalog" resultType="com.library.entity.Book">
+        SELECT <include refid="bookColumns"/>
+        FROM book
+        <include refid="catalogWhere"/>
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <!-- 首页新书推荐：按出版日期倒序取最新的 N 本 -->
+    <select id="findNewBooks" resultType="com.library.vo.BookBriefVO">
+        SELECT ISBN, bname AS bookName, author, publisher, pubDate
+        FROM book
+        WHERE bookStatus = 1
+        ORDER BY pubDate DESC, id DESC
+        LIMIT #{limit}
+    </select>
+    <!-- 新增图书元数据，ISBN 由管理员手动录入，bookStatus 默认为上架 -->
+    <insert id="insert">
+        INSERT INTO book (ISBN, bname, author, publisher, pubDate, introduction, clcNum, bookStatus, price)
+        VALUES (#{ISBN}, #{bname}, #{author}, #{publisher}, #{pubDate}, #{introduction}, #{clcNum}, #{bookStatus}, #{price})
+    </insert>
+    <!-- 上下架操作：bookStatus=1 上架、=0 下架，下架后读者端搜不到 -->
+    <update id="updateStatus">
+        UPDATE book SET bookStatus = #{bookStatus} WHERE ISBN = #{ISBN}
+    </update>
+    <!-- 编辑图书信息：不允许改 ISBN（主键），只更新元数据字段 -->
+    <update id="update">
+        UPDATE book
+        SET bname = #{bname},
+            author = #{author},
+            publisher = #{publisher},
+            pubDate = #{pubDate},
+            introduction = #{introduction},
+            clcNum = #{clcNum},
+            price = #{price}
+        WHERE ISBN = #{ISBN}
+    </update>
+    <!-- 仪表盘用：统计馆藏图书种数（不去重副本） -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM book
+    </select>
+</mapper>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 学生信息表 (student)：sno 为主键，graduated 标记是否毕业 -->
+<mapper namespace="com.library.mapper.StudentMapper">
+    <!-- 按学号查学生，登录鉴权和借书前身份校验都走这个查询 -->
+    <select id="findBySno" resultType="com.library.entity.Student">
+        SELECT id, sno, username, type, college, major, birth, originPlace, password, graduated
+        FROM student WHERE sno = #{sno}
+    </select>
+    <!-- 新增学生账户，注册或管理员导入时使用 -->
+    <insert id="insert">
+        INSERT INTO student (sno, username, type, college, major, birth, originPlace, password, graduated)
+        VALUES (#{sno}, #{username}, #{type}, #{college}, #{major}, #{birth}, #{originPlace}, #{password}, #{graduated})
+    </insert>
+    <!-- 学生编辑个人资料：只允许改姓名/类别/学院/专业/籍贯，不改学号和密码 -->
+    <update id="update">
+        UPDATE student SET username=#{username}, type=#{type}, college=#{college},
+                           major=#{major}, birth=#{birth}, originPlace=#{originPlace}
+        WHERE sno = #{sno}
+    </update>
+    <!-- 单独修改密码，需要旧密码验证后才能调用 -->
+    <update id="updatePassword">
+        UPDATE student SET password = #{password} WHERE sno = #{sno}
+    </update>
+</mapper>

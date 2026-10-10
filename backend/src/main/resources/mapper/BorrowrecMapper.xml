@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 借阅记录表 (borrowrec)：记录每笔借还书流水 -->
+<mapper namespace="com.library.mapper.BorrowrecMapper">
+    <!-- 新增借阅流水，serNum 由数据库自增生成，后续还书/罚款都靠这个主键关联 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="serNum">
+        INSERT INTO borrowrec (sno, barCode, borDate, retDate, retStatus, fineStatus)
+        VALUES (#{sno}, #{barCode}, #{borDate}, #{retDate}, #{retStatus}, #{fineStatus})
+    </insert>
+    <!-- 借书前先查该副本有没有未还的流水，防止同一本书被重复借出 -->
+    <select id="findActiveByBarCode" resultType="com.library.entity.Borrowrec">
+        SELECT serNum, sno, barCode, borDate, retDate, realRetDate, retStatus, ovdDays, fineMoney, fineStatus, paySerNum
+        FROM borrowrec WHERE barCode = #{barCode} AND retStatus = '未归还' LIMIT 1
+    </select>
+    <!-- 按流水号精确查单条借阅记录，还书和罚款操作都先拿这条记录做判断 -->
+    <select id="findBySerNum" resultType="com.library.entity.Borrowrec">
+        SELECT serNum, sno, barCode, borDate, retDate, realRetDate, retStatus, ovdDays, fineMoney, fineStatus, paySerNum
+        FROM borrowrec WHERE serNum = #{serNum}
+    </select>
+    <!-- 限制学生最大在借数量前，先统计该学生当前还有几本没还 -->
+    <select id="countActiveBySno" resultType="long">
+        SELECT COUNT(*) FROM borrowrec WHERE sno = #{sno} AND retStatus = '未归还'
+    </select>
+    <!-- 还书时回写：归还状态、实际还书日期、逾期天数、罚款金额和缴费状态，一次 UPDATE 完成所有结算字段 -->
+    <update id="returnBook">
+        UPDATE borrowrec
+        SET retStatus = #{retStatus}, realRetDate = #{realRetDate},
+            ovdDays = #{ovdDays}, fineMoney = #{fineMoney}, fineStatus = #{fineStatus}
+        WHERE serNum = #{serNum}
+    </update>
+    <!-- 批量标记罚款已缴：用 foreach 拼 IN 子句，同时回写缴费流水号 -->
+    <update id="updateFinePaid">
+        UPDATE borrowrec SET fineStatus = '已缴', paySerNum = #{paySerNum}
+        WHERE serNum IN
+        <foreach collection="serNums" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    <!-- 查询学生当前在借的书：三表 JOIN 取图书详情，运行时动态计算逾期天数 -->
+    <select id="findActiveBySno" resultType="com.library.vo.BorrowingVO">
+        SELECT br.serNum AS recNo, br.barCode, b.bname AS bookName, b.author, b.ISBN,
+               br.borDate, br.retDate, 1 AS status,
+               GREATEST(DATEDIFF(CURDATE(), br.retDate), 0) AS overdueDays,
+               COALESCE(b.price, 50.00) AS bookPrice
+        FROM borrowrec br
+        JOIN bookcopy bc ON br.barCode = bc.barCode
+        JOIN book b ON bc.ISBN = b.ISBN
+        WHERE br.sno = #{sno} AND br.retStatus = '未归还'
+        ORDER BY br.borDate DESC
+    </select>
+    <!-- 学生借阅历史：三表 JOIN，CASE 将"未归还"映射为 status=1 其余为 0，方便前端渲染 -->
+    <select id="findHistoryBySno" resultType="com.library.vo.HistoryVO">
+        SELECT br.serNum AS recNo, br.barCode, b.bname AS bookName, b.author, b.ISBN,
+               br.borDate, br.retDate, br.realRetDate,
+               CASE WHEN br.retStatus = '未归还' THEN 1 ELSE 0 END AS status,
+               br.retStatus AS retStatusText,
+               COALESCE(br.fineMoney, 0) AS fineAmount
+        FROM borrowrec br
+        JOIN bookcopy bc ON br.barCode = bc.barCode
+        JOIN book b ON bc.ISBN = b.ISBN
+        WHERE br.sno = #{sno}
+        ORDER BY br.borDate DESC
+    </select>
+    <!-- 仪表盘用：统计全局当前在借总量，不区分学生 -->
+    <select id="countActive" resultType="long">
+        SELECT COUNT(*) FROM borrowrec WHERE retStatus = '未归还'
+    </select>
+    <!-- 本月借阅学生排行：按 borDate 筛选当月，GROUP BY 学生后 COUNT 降序取 Top10 -->
+    <select id="studentMonthlyRanking" resultType="com.library.vo.RankingVO$StudentRankItem">
+        SELECT s.sno, s.username AS studentName, COUNT(*) AS borrowCount
+        FROM borrowrec br
+        JOIN student s ON br.sno = s.sno
+        WHERE YEAR(br.borDate) = YEAR(CURDATE()) AND MONTH(br.borDate) = MONTH(CURDATE())
+        GROUP BY s.sno, s.username
+        ORDER BY borrowCount DESC
+        LIMIT 10
+    </select>
+    <!-- 本月热门图书排行：先 JOIN bookcopy 再 JOIN book，GROUP BY ISBN 后 COUNT 降序取 Top10 -->
+    <select id="bookMonthlyRanking" resultType="com.library.vo.RankingVO$BookRankItem">
+        SELECT b.ISBN, b.bname AS bookName, b.author, COUNT(*) AS borrowCount
+        FROM borrowrec br
+        JOIN bookcopy bc ON br.barCode = bc.barCode
+        JOIN book b ON bc.ISBN = b.ISBN
+        WHERE YEAR(br.borDate) = YEAR(CURDATE()) AND MONTH(br.borDate) = MONTH(CURDATE())
+        GROUP BY b.ISBN, b.bname, b.author
+        ORDER BY borrowCount DESC
+        LIMIT 10
+    </select>
+</mapper>

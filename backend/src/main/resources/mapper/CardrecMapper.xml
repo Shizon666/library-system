@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 借书证操作记录表 (cardrec)：记录新办/挂失/补办/注销等卡片操作流水 -->
+<mapper namespace="com.library.mapper.CardrecMapper">
+    <!-- 新增一条卡片操作流水，serNum 自增，用于后续追溯卡片变更历史 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="serNum">
+        INSERT INTO cardrec (sno, originCardNo, newCardNo, opType)
+        VALUES (#{sno}, #{originCardNo}, #{newCardNo}, #{opType})
+    </insert>
+    <!-- 按学号查该学生所有卡片操作记录，按时间倒序方便查看最新操作 -->
+    <select id="findBySno" resultType="com.library.entity.Cardrec">
+        SELECT serNum, sno, originCardNo, newCardNo, opType
+        FROM cardrec WHERE sno = #{sno} ORDER BY serNum DESC
+    </select>
+    <!-- 证件操作记录列表：LEFT JOIN student 取学生姓名，支持按操作类型和学号模糊筛选，CASE 将中文操作类型映射为数字便于前端排序 -->
+    <select id="findAllRecords" resultType="com.library.vo.CardRecordVO">
+        SELECT cr.serNum, cr.sno, s.username AS studentName, cr.originCardNo, cr.newCardNo,
+               CASE cr.opType
+                   WHEN '新办' THEN 1 WHEN '挂失' THEN 2 WHEN '补办' THEN 3 WHEN '注销' THEN 4
+                   ELSE 0 END AS opType
+        FROM cardrec cr
+        LEFT JOIN student s ON cr.sno = s.sno
+        <where>
+            <if test="opType != null and opType != ''">AND cr.opType = #{opType}</if>
+            <if test="sno != null and sno != ''">AND cr.sno LIKE CONCAT('%', #{sno}, '%')</if>
+        </where>
+        ORDER BY cr.serNum DESC
+    </select>
+</mapper>

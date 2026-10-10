@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 借书证表 (libcard)：一个学生可有多张卡（补办），cardStatus 区分正常/挂失/注销 -->
+<mapper namespace="com.library.mapper.LibcardMapper">
+    <!-- 按卡号查证件，挂失/补办/注销操作前先验证卡是否存在 -->
+    <select id="findByCardNo" resultType="com.library.entity.Libcard">
+        SELECT cardNo, sno, sname, type, college, major, birth, originPlace, cardStatus, times
+        FROM libcard WHERE cardNo = #{cardNo}
+    </select>
+    <!-- 查学生当前有效的借书证，借书时必须有这张卡才能操作 -->
+    <select id="findActiveBySno" resultType="com.library.entity.Libcard">
+        SELECT cardNo, sno, sname, type, college, major, birth, originPlace, cardStatus, times
+        FROM libcard WHERE sno = #{sno} AND cardStatus = '正常' LIMIT 1
+    </select>
+    <!-- 判断该学生是否已有挂失卡，防止重复挂失 -->
+    <select id="existsLostBySno" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM libcard WHERE sno = #{sno} AND cardStatus = '挂失'
+    </select>
+    <!-- 统计该学生名下有几张卡，新办时用来限制卡数上限 -->
+    <select id="countBySno" resultType="long">
+        SELECT COUNT(*) FROM libcard WHERE sno = #{sno}
+    </select>
+    <!-- 新办借书证，cardNo 由学号+3位序号拼接生成 -->
+    <insert id="insert">
+        INSERT INTO libcard (cardNo, sno, sname, type, college, major, birth, originPlace, cardStatus, times)
+        VALUES (#{cardNo}, #{sno}, #{sname}, #{type}, #{college}, #{major}, #{birth}, #{originPlace}, #{cardStatus}, #{times})
+    </insert>
+    <!-- 挂失/恢复/注销时切换卡状态，前端通过状态控制可用操作按钮 -->
+    <update id="updateCardStatus">
+        UPDATE libcard SET cardStatus = #{cardStatus} WHERE cardNo = #{cardNo}
+    </update>
+    <!-- 借还书时增减借阅次数，delta 借书+1 还书-1，用于判断是否达到上限 -->
+    <update id="updateTimes">
+        UPDATE libcard SET times = times + #{delta} WHERE cardNo = #{cardNo}
+    </update>
+    <!-- 仪表盘用：统计当前有效的借书证总数 -->
+    <select id="countActive" resultType="long">
+        SELECT COUNT(*) FROM libcard WHERE cardStatus = '正常'
+    </select>
+    <!-- 查找该学号下最大的卡号（学号+3位序号），用于补办时自增生成新卡号 -->
+    <select id="findMaxCardNoBySnoPrefix" resultType="java.lang.String">
+        SELECT MAX(cardNo) FROM libcard
+        WHERE cardNo LIKE CONCAT(#{sno}, '%')
+          AND CHAR_LENGTH(cardNo) = CHAR_LENGTH(#{sno}) + 3
+    </select>
+    <!-- 补办时取该学生最新一张卡的信息（含已挂失的），用来复制旧卡资料到新卡 -->
+    <select id="findLatestBySno" resultType="com.library.entity.Libcard">
+        SELECT cardNo, sno, sname, type, college, major, birth, originPlace, cardStatus, times
+        FROM libcard WHERE sno = #{sno}
+        ORDER BY cardNo DESC LIMIT 1
+    </select>
+</mapper>

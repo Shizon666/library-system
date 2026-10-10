@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 罚款查询：基于 borrowrec 表中 fineMoney > 0 的记录，关联 bookcopy / book / student 拼装罚款详情 -->
+<mapper namespace="com.library.mapper.FineMapper">
+    <!-- 罚款公共查询片段：borrowrec -> bookcopy -> book 三表 JOIN，LEFT JOIN student 取姓名 -->
+    <sql id="fineSelect">
+        SELECT br.serNum AS fineId, br.serNum AS recNo, br.barCode, b.bname AS bookName, b.author,
+               br.fineMoney AS amount,
+               CASE WHEN br.fineStatus = '未缴' THEN 0 ELSE 1 END AS payStatus,
+               br.retDate, br.realRetDate,
+               br.realRetDate AS createTime, br.ovdDays AS overdueDays, br.sno,
+               s.username AS studentName
+        FROM borrowrec br
+        JOIN bookcopy bc ON br.barCode = bc.barCode
+        JOIN book b ON bc.ISBN = b.ISBN
+        LEFT JOIN student s ON br.sno = s.sno
+        WHERE br.fineMoney > 0
+    </sql>
+
+    <!-- 按流水号查单条罚款记录，缴费前先校验这条记录是否存在且未缴 -->
+    <select id="findBySerNum" resultType="com.library.entity.Borrowrec">
+        SELECT serNum, sno, barCode, borDate, retDate, realRetDate, retStatus, ovdDays, fineMoney, fineStatus, paySerNum
+        FROM borrowrec WHERE serNum = #{serNum}
+    </select>
+    <!-- 学生端查自己的罚款列表：复用公共片段，按实际归还时间倒序 -->
+    <select id="findBySno" resultType="com.library.vo.FineVO">
+        <include refid="fineSelect"/> AND br.sno = #{sno}
+        ORDER BY br.realRetDate DESC
+    </select>
+    <!-- 全部罚款列表：payStatus 为可选筛选条件，null 时不加限制 -->
+    <select id="findAll" resultType="com.library.vo.FineVO">
+        <include refid="fineSelect"/>
+        <if test="payStatus != null">
+            AND CASE WHEN br.fineStatus = '未缴' THEN 0 ELSE 1 END = #{payStatus}
+        </if>
+        ORDER BY br.realRetDate DESC
+    </select>
+    <!-- 学生端按缴费状态筛选自己的罚款，payStatus=null 时返回全部 -->
+    <select id="findAllBySno" resultType="com.library.vo.FineVO">
+        <include refid="fineSelect"/> AND br.sno = #{sno}
+        <if test="payStatus != null">
+            AND CASE WHEN br.fineStatus = '未缴' THEN 0 ELSE 1 END = #{payStatus}
+        </if>
+        ORDER BY br.realRetDate DESC
+    </select>
+    <!-- 学生未缴罚款总额：COALESCE 兜底无记录时返回 0 而非 null -->
+    <select id="sumUnpaidBySno" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(fineMoney), 0)
+        FROM borrowrec WHERE sno = #{sno} AND fineStatus = '未缴' AND fineMoney > 0
+    </select>
+    <!-- 统计某学生未缴罚款笔数，个人中心展示待缴数量角标 -->
+    <select id="countUnpaidBySno" resultType="long">
+        SELECT COUNT(*) FROM borrowrec
+        WHERE sno = #{sno} AND fineStatus = '未缴' AND fineMoney > 0
+    </select>
+    <!-- 仪表盘用：统计全局未缴罚款笔数，提醒管理员催缴 -->
+    <select id="countUnpaid" resultType="long">
+        SELECT COUNT(*) FROM borrowrec WHERE fineStatus = '未缴' AND fineMoney > 0
+    </select>
+</mapper>

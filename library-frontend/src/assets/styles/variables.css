@@ -1,0 +1,105 @@
+:root {
+  /* 色卡一：荔枝白 / 鸦青 / 常磐色 */
+  /* 色卡二：Eerie Black / Green House / Sirocco / Asparagus / Spring Rain */
+
+  --color-primary: #5E7D67;
+  --color-primary-light: #8EA295;
+  --color-primary-dark: #4B6452;
+  --color-accent: #414b4e;
+  --color-secondary: #5E7D67;
+  --color-muted: #A8C79F;
+  --color-bg: #E1E1E1;
+  --color-sidebar: #414b4e;
+  --color-card-bg: rgba(138, 191, 159, 0.1);
+  --color-text-primary: #0F1E0F;
+  --color-text-secondary: #5E7D67;
+  --color-border: #A8C79F;
+  --color-border-light: #C5D9BE;
+  --color-success: #007b43;
+  --color-warning: #42633C;
+  --color-danger: #414b4e;
+  --color-info: #5E7D67;
+
+  /* 按钮统一色 */
+  --color-button: #6D7278;
+  --color-button-hover: #858A8F;
+  --color-button-active: #5A5F64;
+  --color-button-text: #FFFFFF;
+
+  /* 侧边栏文字 */
+  --color-sidebar-logo: #FFFFFF;
+  --color-sidebar-text: #D8E6D4;
+  --color-sidebar-text-active: #FFFFFF;
+  --color-sidebar-active: #005F35;
+
+  /* 图标/状态浅底 */
+  --color-primary-bg: rgba(94, 125, 103, 0.12);
+  --color-secondary-bg: rgba(94, 125, 103, 0.16);
+  --color-muted-bg: rgba(168, 199, 159, 0.45);
+  --color-accent-bg: rgba(65, 75, 78, 0.1);
+
+  /* 布局尺寸 */
+  --sidebar-width: 220px;
+  --topbar-height: 56px;
+
+  /* 阴影 */
+  --shadow-card: 0 1px 4px rgba(15, 30, 15, 0.07);
+  --shadow-dropdown: 0 4px 12px rgba(15, 30, 15, 0.1);
+
+  /* 圆角 */
+  --radius-base: 8px;
+  --radius-small: 4px;
+
+  /* Element Plus 主题覆盖（主色 #5E7D67，替代默认 #409EFF） */
+  --el-color-primary: #5E7D67;
+  --el-color-primary-light-3: #8EA295;
+  --el-color-primary-light-5: #AFBFB3;
+  --el-color-primary-light-7: #CFDBD1;
+  --el-color-primary-light-8: #DFE7E2;
+  --el-color-primary-light-9: #EFF3F0;
+  --el-color-primary-dark-2: #4B6452;
+
+  --el-color-success: #007b43;
+  --el-color-success-light-3: #4D9B72;
+  --el-color-success-light-5: #80B89A;
+  --el-color-success-light-7: #B3D5C3;
+  --el-color-success-light-8: #CCE3D6;
+  --el-color-success-light-9: #E6F2EB;
+  --el-color-success-dark-2: #006236;
+
+  --el-color-warning: #42633C;
+  --el-color-warning-light-3: #718A6C;
+  --el-color-warning-light-5: #94A890;
+  --el-color-warning-light-7: #B8C7B4;
+  --el-color-warning-light-8: #CBD6C9;
+  --el-color-warning-light-9: #ECF0EB;
+  --el-color-warning-dark-2: #354F30;
+
+  --el-color-danger: #414b4e;
+  --el-color-danger-light-3: #707779;
+  --el-color-danger-light-5: #949B9D;
+  --el-color-danger-light-7: #B7BCBD;
+  --el-color-danger-light-8: #C9CDCE;
+  --el-color-danger-light-9: #ECEEEF;
+  --el-color-danger-dark-2: #343C3E;
+
+  --el-color-info: #5E7D67;
+  --el-color-info-light-3: #8EA295;
+  --el-color-info-light-5: #AFBFB3;
+  --el-color-info-light-7: #CFDBD1;
+  --el-color-info-light-8: #DFE7E2;
+  --el-color-info-light-9: #EFF3F0;
+  --el-color-info-dark-2: #4B6452;
+
+  --el-bg-color: #939597;
+  --el-bg-color-page: #E1E1E1;
+  --el-border-color: #A8C79F;
+  --el-border-color-light: #C5D9BE;
+  --el-border-color-lighter: #DDE8D9;
+  --el-text-color-primary: #0F1E0F;
+  --el-text-color-regular: #2A3D2E;
+  --el-text-color-secondary: #5E7D67;
+  --el-text-color-placeholder: #8A9E90;
+  --el-fill-color-blank: #939597;
+  --el-fill-color-light: #F3F7F0;
+}
