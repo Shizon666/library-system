@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冷链物流温度监控看板</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --bg-1: #0b1f2a;
+            --bg-2: #123447;
+            --accent: #2ec4b6;
+            --accent-2: #ff9f1c;
+            --danger: #e71d36;
+            --card: rgba(255, 255, 255, 0.96);
+            --text: #1a2b34;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+            min-height: 100vh;
+            color: var(--text);
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(46, 196, 182, 0.25), transparent 45%),
+                radial-gradient(ellipse at 90% 10%, rgba(255, 159, 28, 0.18), transparent 40%),
+                linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 55%, #0a1620 100%);
+            padding: 24px;
+        }
+        .dashboard { max-width: 1400px; margin: 0 auto; }
+        .header {
+            color: #e8f6f4;
+            margin-bottom: 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .header h1 {
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .header p { opacity: 0.85; font-size: 14px; margin-top: 6px; }
+        .badge {
+            background: rgba(46, 196, 182, 0.15);
+            border: 1px solid rgba(46, 196, 182, 0.45);
+            color: #9ff0e6;
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+        .metric-cards {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .metric-card {
+            background: var(--card);
+            padding: 18px 16px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+        }
+        .metric-label { font-size: 13px; color: #6b7c86; margin-bottom: 8px; }
+        .metric-value { font-size: 28px; font-weight: 700; color: #16303c; }
+        .metric-value.accent { color: var(--accent); }
+        .metric-value.warn { color: var(--accent-2); }
+        .metric-value.danger { color: var(--danger); }
+        .metric-sub { font-size: 12px; color: #8a9aa3; margin-top: 6px; }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .charts-grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+        }
+        .chart-card {
+            background: var(--card);
+            padding: 16px 18px 12px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+        }
+        .chart-card h3 {
+            font-size: 15px;
+            font-weight: 650;
+            margin-bottom: 8px;
+            color: #1d3642;
+        }
+        .chart-container { width: 100%; height: 280px; }
+        .chart-container.sm { height: 240px; }
+        .note {
+            margin-top: 16px;
+            color: rgba(232, 246, 244, 0.75);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        @media (max-width: 1100px) {
+            .metric-cards { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid, .charts-grid-3 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <div>
+                <h1>冷链物流温度监控看板</h1>
+                <p>阈值 -18℃ ~ 8℃</p>
+            </div>
+            <div class="badge">2024 Q1</div>
+        </div>
+
+        <div class="metric-cards">
+            <div class="metric-card">
+                <div class="metric-label">总记录</div>
+                <div class="metric-value" id="m_total">—</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">设备数</div>
+                <div class="metric-value accent" id="m_device">—</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">告警次数</div>
+                <div class="metric-value warn" id="m_alert">—</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">告警率</div>
+                <div class="metric-value danger" id="m_rate">—</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">均温℃</div>
+                <div class="metric-value" id="m_temp">—</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>按小时看告警</h3>
+                <div id="chartHour" class="chart-container"></div>
+            </div>
+            <div class="chart-card">
+                <h3>告警类型分布</h3>
+                <div id="chartType" class="chart-container"></div>
+            </div>
+        </div>
+
+        <div class="charts-grid-3">
+            <div class="chart-card">
+                <h3>地点告警率</h3>
+                <div id="chartLoc" class="chart-container sm"></div>
+            </div>
+            <div class="chart-card">
+                <h3>告警设备 top</h3>
+                <div id="chartDev" class="chart-container sm"></div>
+            </div>
+            <div class="chart-card">
+                <h3>地点类型</h3>
+                <div id="chartLocType" class="chart-container sm"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const overview = {
+            total_records: 2000,
+            device_cnt: 79,
+            alert_cnt: 563,
+            alert_rate: 0.2815,
+            avg_temp: -4.56
+        };
+
+        const hourly = [
+            { hour: 0, alert_rate: 0.3590, avg_temp: -4.6 },
+            { hour: 1, alert_rate: 0.2658, avg_temp: -4.8 },
+            { hour: 2, alert_rate: 0.2208, avg_temp: -5.1 },
+            { hour: 3, alert_rate: 0.2478, avg_temp: -4.9 },
+            { hour: 4, alert_rate: 0.2588, avg_temp: -4.7 },
+            { hour: 5, alert_rate: 0.2714, avg_temp: -4.5 },
+            { hour: 6, alert_rate: 0.3068, avg_temp: -4.2 },
+            { hour: 7, alert_rate: 0.2824, avg_temp: -4.3 },
+            { hour: 8, alert_rate: 0.2875, avg_temp: -4.1 },
+            { hour: 9, alert_rate: 0.3256, avg_temp: -3.9 },
+            { hour: 10, alert_rate: 0.2625, avg_temp: -4.4 },
+            { hour: 11, alert_rate: 0.2090, avg_temp: -4.8 },
+            { hour: 12, alert_rate: 0.2532, avg_temp: -4.5 },
+            { hour: 13, alert_rate: 0.2111, avg_temp: -4.7 },
+            { hour: 14, alert_rate: 0.2763, avg_temp: -4.2 },
+            { hour: 15, alert_rate: 0.3656, avg_temp: -3.6 },
+            { hour: 16, alert_rate: 0.2619, avg_temp: -4.4 },
+            { hour: 17, alert_rate: 0.2239, avg_temp: -4.9 },
+            { hour: 18, alert_rate: 0.3103, avg_temp: -4.0 },
+            { hour: 19, alert_rate: 0.2308, avg_temp: -4.8 },
+            { hour: 20, alert_rate: 0.3409, avg_temp: -3.8 },
+            { hour: 21, alert_rate: 0.2784, avg_temp: -4.3 },
+            { hour: 22, alert_rate: 0.3656, avg_temp: -3.7 },
+            { hour: 23, alert_rate: 0.2903, avg_temp: -4.2 }
+        ];
+
+        const alertTypes = [
+            { name: '正常', value: 1437 },
+            { name: '设备告警', value: 328 },
+            { name: '超温', value: 142 },
+            { name: '过冷', value: 93 }
+        ];
+
+        const locations = [
+            { name: '冷藏车01', rate: 0.3175 },
+            { name: '冷库C', rate: 0.2937 },
+            { name: '冷库B', rate: 0.2914 },
+            { name: '冷库A', rate: 0.2857 },
+            { name: '中转仓', rate: 0.2833 },
+            { name: '前置仓', rate: 0.2543 },
+            { name: '冷藏车02', rate: 0.2465 }
+        ];
+
+        const devices = [
+            { id: 'D68', alert: 14 },
+            { id: 'D47', alert: 14 },
+            { id: 'D17', alert: 14 },
+            { id: 'D11', alert: 13 },
+            { id: 'D48', alert: 12 },
+            { id: 'D51', alert: 12 },
+            { id: 'D54', alert: 11 },
+            { id: 'D64', alert: 11 }
+        ];
+
+        const locTypes = [
+            { name: '运输车辆', rate: 0.280 },
+            { name: '冷库', rate: 0.290 },
+            { name: '仓储节点', rate: 0.269 }
+        ];
+
+        document.getElementById('m_total').textContent = overview.total_records.toLocaleString();
+        document.getElementById('m_device').textContent = overview.device_cnt;
+        document.getElementById('m_alert').textContent = overview.alert_cnt;
+        document.getElementById('m_rate').textContent = (overview.alert_rate * 100).toFixed(2) + '%';
+        document.getElementById('m_temp').textContent = overview.avg_temp.toFixed(2);
+
+        const chartHour = echarts.init(document.getElementById('chartHour'));
+        chartHour.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['告警率', '平均温度'] },
+            grid: { left: 45, right: 45, top: 40, bottom: 30 },
+            xAxis: { type: 'category', data: hourly.map(d => d.hour + '时') },
+            yAxis: [
+                { type: 'value', name: '告警率', axisLabel: { formatter: v => (v * 100).toFixed(0) + '%' } },
+                { type: 'value', name: '℃' }
+            ],
+            series: [
+                {
+                    name: '告警率', type: 'bar', data: hourly.map(d => d.alert_rate),
+                    itemStyle: { color: '#2ec4b6' }
+                },
+                {
+                    name: '平均温度', type: 'line', yAxisIndex: 1, data: hourly.map(d => d.avg_temp),
+                    itemStyle: { color: '#ff9f1c' }, smooth: true
+                }
+            ]
+        });
+
+        const chartType = echarts.init(document.getElementById('chartType'));
+        chartType.setOption({
+            tooltip: { trigger: 'item' },
+            series: [{
+                type: 'pie',
+                radius: ['38%', '68%'],
+                data: alertTypes,
+                label: { formatter: '{b}\n{d}%' },
+                color: ['#2ec4b6', '#e71d36', '#3a86ff', '#ff9f1c']
+            }]
+        });
+
+        const chartLoc = echarts.init(document.getElementById('chartLoc'));
+        chartLoc.setOption({
+            tooltip: { trigger: 'axis', formatter: p => p[0].name + '<br/>告警率: ' + (p[0].value * 100).toFixed(1) + '%' },
+            grid: { left: 70, right: 20, top: 20, bottom: 30 },
+            xAxis: { type: 'value', axisLabel: { formatter: v => (v * 100).toFixed(0) + '%' } },
+            yAxis: { type: 'category', data: locations.map(d => d.name).reverse() },
+            series: [{
+                type: 'bar',
+                data: locations.map(d => d.rate).reverse(),
+                itemStyle: { color: '#123447' }
+            }]
+        });
+
+        const chartDev = echarts.init(document.getElementById('chartDev'));
+        chartDev.setOption({
+            tooltip: { trigger: 'axis' },
+            grid: { left: 40, right: 16, top: 20, bottom: 30 },
+            xAxis: { type: 'category', data: devices.map(d => d.id) },
+            yAxis: { type: 'value', name: '告警次数' },
+            series: [{
+                type: 'bar',
+                data: devices.map(d => d.alert),
+                itemStyle: { color: '#e71d36' }
+            }]
+        });
+
+        const chartLocType = echarts.init(document.getElementById('chartLocType'));
+        chartLocType.setOption({
+            tooltip: { trigger: 'item', formatter: p => p.name + ': ' + (p.value * 100).toFixed(1) + '%' },
+            series: [{
+                type: 'pie',
+                radius: '65%',
+                data: locTypes.map(d => ({ name: d.name, value: d.rate })),
+                label: { formatter: '{b}' },
+                color: ['#ff9f1c', '#2ec4b6', '#3a86ff']
+            }]
+        });
+
+        window.addEventListener('resize', () => {
+            chartHour.resize();
+            chartType.resize();
+            chartLoc.resize();
+            chartDev.resize();
+            chartLocType.resize();
+        });
+    </script>
+</body>
+</html>
